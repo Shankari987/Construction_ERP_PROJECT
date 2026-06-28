@@ -8,7 +8,7 @@ from sqlalchemy import (
 )
 
 from datetime import datetime
-
+from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 
@@ -38,10 +38,20 @@ class StockIn(Base):
         nullable=False
     )
 
+    # Link to the purchase that created this stock entry
+    purchase_id = Column(
+        Integer,
+        ForeignKey("purchases.id"),
+        nullable=True,
+        unique=True
+    )
+
     created_at = Column(
         DateTime,
         default=datetime.utcnow
     )
+
+    purchase = relationship("Purchase")
 
 
 class StockOut(Base):

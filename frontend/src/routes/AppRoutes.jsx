@@ -149,7 +149,7 @@ const AppRoutes = () => {
       <Route
         path="/inventory/stock-out"
         element={
-          <ProtectedRoute allowedRoles={["admin", "manager", "site_engineer"]}>
+          <ProtectedRoute allowedRoles={["admin", "manager"]}>
             <Layout>
               <StockOut />
             </Layout>

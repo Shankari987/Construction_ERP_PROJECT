@@ -10,7 +10,7 @@ from app.services.inventory_service import (
     calculate_stock
 )
 
-from app.utils.deps import get_db
+from app.utils.deps import get_db,get_current_user
 
 router = APIRouter(
     tags=["Dashboard"]
@@ -19,97 +19,59 @@ router = APIRouter(
 
 @router.get("/")
 def dashboard(
-    db: Session = Depends(get_db)
-):
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
 
+):
     materials = db.query(
         Material
     ).all()
 
     total_stock = 0
-
     low_stock_materials = []
+    stock_breakdown = []
 
     # stock summary
     for material in materials:
-
         current_stock = calculate_stock(
             db,
             material.id
         )
-
         total_stock += current_stock
 
         # low stock check
-        if (
-        material.minimum_stock and
-        current_stock <
-        material.minimum_stock
-):
-
+        min_stock = float(material.minimum_stock or 0.0) if material.minimum_stock is not None else 0.0
+        is_low = False
+        if current_stock < min_stock:
+            is_low = True
             low_stock_materials.append({
-
-                "material_name":
-                    material.name,
-
-                "available_stock":
-                    current_stock
+                "material_id": material.id,
+                "material_name": material.name,
+                "available_stock": current_stock,
+                "minimum_stock": min_stock
             })
-
-    # total expense
-    total_expense = db.query(
-        func.sum(
-            StockIn.quantity *
-            StockIn.unit_price
-        )
-    ).scalar() or 0
-
-    # recent purchases
-    recent_purchases = db.query(
-        Purchase
-    ).order_by(
-        Purchase.id.desc()
-    ).limit(5).all()
-
-    recent_data = []
-
-    for purchase in recent_purchases:
-
-        recent_data.append({
-
-            "id":
-                purchase.id,
-
-            "material_name":
-                purchase.material.name,
-
-            "supplier_name":
-                purchase.supplier.name,
-
-            "quantity":
-                purchase.quantity,
-
-            "total_amount":
-                purchase.total_amount,
-
-            "status":
-                purchase.status
+            
+        stock_breakdown.append({
+            "material_name": material.name,
+            "available_stock": current_stock,
+            "minimum_stock": min_stock,
+            "is_low": is_low
         })
 
+    # Re-use finance dashboard values for consistency
+    from app.services.finance_service import get_finance_dashboard
+    finance_dash = get_finance_dashboard(db)
+    
+    total_expense = finance_dash["total_expense"]
+    monthly_trend = finance_dash["monthly_trend"]
+    recent_purchases = finance_dash["recent_purchases"][:5]  # Limit to 5 for dashboard
+
     return {
-
-        "total_materials":
-            len(materials),
-
-        "total_stock":
-            total_stock,
-
-        "total_expense":
-            total_expense,
-
-        "low_stock_materials":
-            low_stock_materials,
-
-        "recent_purchases":
-            recent_data
+        "total_materials": len(materials),
+        "total_stock": total_stock,
+        "total_expense": total_expense,
+        "low_stock_materials": low_stock_materials,
+        "stock_breakdown": stock_breakdown,
+        "monthly_trend": monthly_trend,
+        "recent_purchases": recent_purchases
     }

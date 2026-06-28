@@ -1,5 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 from app.core.database import Base, engine
 from app.routes import (
     auth,
@@ -11,7 +17,16 @@ from app.routes import (
     dashboard
 )
 Base.metadata.create_all(bind=engine)
+
 app = FastAPI(title="Mini Construction ERP")
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled server exception on {request.method} {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal server error occurred. Please try again later."}
+    )
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*","https://construction-erp-1.onrender.com"],

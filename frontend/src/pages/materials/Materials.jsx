@@ -252,15 +252,7 @@ const Materials = () => {
             </Button>
           )}
 
-          {/* DELETE */}
-          <Button
-            size="small"
-            color="error"
-            variant="contained"
-            onClick={() => handleDelete(row.id)}
-          >
-            Delete
-          </Button>
+       
         </Stack>
       ),
     },

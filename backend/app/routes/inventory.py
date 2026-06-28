@@ -29,10 +29,8 @@ def get_current_stock(
             detail="Material is inactive"
     )
     current_stock = calculate_stock(db, material_id)
-    low_stock = False
-    if hasattr(material, "minimum_stock"):
-        if current_stock < material.minimum_stock:
-            low_stock = True
+    min_stock = float(material.minimum_stock or 0.0) if hasattr(material, "minimum_stock") and material.minimum_stock is not None else 0.0
+    low_stock = current_stock < min_stock
     return {
         "material_id": material.id,
         "material_name": material.name,
@@ -56,10 +54,8 @@ def get_inventory(
             db,
             material.id
         )
-        low_stock = (
-            available_stock <
-            material.minimum_stock
-        )
+        min_stock = float(material.minimum_stock or 0.0) if material.minimum_stock is not None else 0.0
+        low_stock = available_stock < min_stock
         inventory.append({
             "material_id":
                 material.id,
@@ -74,7 +70,7 @@ def get_inventory(
                 available_stock,
 
             "minimum_stock":
-                material.minimum_stock,
+                min_stock,
 
             "low_stock":
                 low_stock
@@ -100,6 +96,12 @@ def stock_out(
         db,
         data.material_id
     )
+    # guard: requested quantity must be strictly positive
+    if data.quantity <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Stock issue quantity must be greater than zero"
+        )
     # prevent negative stock
     if available_stock < data.quantity:
         raise HTTPException(
@@ -138,14 +140,14 @@ def stock_history(
     ).all()
 
     history = []
-    # stock in history
     for item in stock_in:
         history.append({
             "type": "IN",
             "quantity": item.quantity,
-            "date":item.created_at.strftime("%d-%m-%Y")        
-            })
-    # stock out history
+            "date": item.created_at.strftime("%d-%m-%Y"),
+            "_sort": item.created_at   # for sorting
+        })
+
     for item in stock_out:
         history.append({
             "type": "OUT",
@@ -153,8 +155,16 @@ def stock_history(
             "site_name": item.site_name,
             "purpose": item.purpose,
             "requested_by": item.requested_by,
-            "date":item.created_at.strftime("%d-%m-%Y")       
-            })
+            "date": item.created_at.strftime("%d-%m-%Y"),
+            "_sort": item.created_at   # for sorting
+        })
+
+    history = sorted(history, key=lambda x: x["_sort"], reverse=True)
+
+    # remove the helper key before returning
+    for item in history:
+        item.pop("_sort")
+
     return {
         "material_id": material_id,
         "history": history

@@ -343,7 +343,7 @@ const Suppliers = () => {
 
 
           {/* DELETE */}
-          <Button
+          {/* <Button
             size="small"
 
             color="error"
@@ -355,7 +355,7 @@ const Suppliers = () => {
             }
           >
             Delete
-          </Button>
+          </Button> */}
 
         </Stack>
       ),

@@ -53,9 +53,7 @@ def login(
     db: Session = Depends(get_db)
     
 ):
-    print(data.username)
-    print(data.password)
-    print(len(data.password))
+
 
 
     user = db.query(User).filter(

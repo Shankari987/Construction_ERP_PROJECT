@@ -42,7 +42,21 @@ class Purchase(Base):
     # workflow status
     status = Column(
         String(100),
-        default="Completed"
+        default="pending"
+    )
+
+    # payment tracking
+    payment_status = Column(
+        String(50),
+        default="unpaid"
+    )
+    amount_paid = Column(
+        Float,
+        default=0.0
+    )
+    invoice_number = Column(
+        String(100),
+        nullable=True
     )
 
     created_at = Column(

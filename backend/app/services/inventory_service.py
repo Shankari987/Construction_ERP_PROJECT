@@ -14,15 +14,15 @@ def calculate_stock(
         func.sum(StockIn.quantity)
     ).filter(
         StockIn.material_id == material_id
-    ).scalar() or 0
+    ).scalar()
 
     stock_out = db.query(
         func.sum(StockOut.quantity)
     ).filter(
         StockOut.material_id == material_id
-    ).scalar() or 0
+    ).scalar()
 
-    available_stock = stock_in - stock_out
+    available_stock = float(stock_in or 0.0) - float(stock_out or 0.0)
 
     return available_stock
 
@@ -32,5 +32,5 @@ def is_low_stock(
     available_stock,
     minimum_stock
 ):
-
-    return available_stock < minimum_stock
+    min_stock = float(minimum_stock or 0.0)
+    return float(available_stock or 0.0) < min_stock

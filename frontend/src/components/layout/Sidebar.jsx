@@ -153,7 +153,7 @@ const Sidebar = () => {
       </Toolbar>
 
       {/* Navigation */}
-      <Box sx={{ flexGrow: 1, p: 2, pt: 2.5 }}>
+      <Box sx={{ flexGrow: 1, p: 2, pt: 2.5, overflowY: "auto" }}>
         <Typography
           sx={{
             fontSize: "0.65rem",
